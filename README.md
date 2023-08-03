@@ -1,4 +1,4 @@
-# Back-End Modelo para projetos futuros
+# Back-End Shortly API
 -bcrypt
 -Cors
 -dotenv
