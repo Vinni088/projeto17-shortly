@@ -18,7 +18,7 @@ export async function signUp(req, res) {
       (name, email, password)
     VALUES 
       ($1, $2, $3);
-    `,[name, email, hash])
+    `, [name, email, hash])
 
     res.status(201).send("SignUp efetuado com sucesso");
   } catch (err) {
@@ -27,29 +27,31 @@ export async function signUp(req, res) {
 }
 
 export async function signIn(req, res) {
-  const { email, password} = req.body;
+  const { email, password } = req.body;
   const token = tokenGeneretor();
-  
+
   try {
-    let usuario = (await db.query(`SELECT * FROM users WHERE email = $1;`,[email])).rows[0];
-    if(!usuario) {return res.status(401).send(" O email enviado não está cadastrado. ")};
+    let usuario = (await db.query(`
+    SELECT users.*, sessions.token
+    FROM users
+    LEFT JOIN sessions
+    ON users.id = sessions."userId"
+    WHERE users.email = $1;
+    `, [email])).rows[0];
+
+    if (!usuario) { return res.status(401).send(" O email enviado não está cadastrado. ") };
 
     const senhaEstaCorreta = bcrypt.compareSync(password, usuario.password);
-    if(!senhaEstaCorreta) {return res.status(401).send(" A senha enviada não está correta. ")};
+    if (!senhaEstaCorreta) { return res.status(401).send(" A senha enviada não está correta. ") };
 
-    let  usuarioPossuiToken = await db.query(`SELECT * FROM sessions WHERE "userId" = $1;`,[usuario.id]);
-    /**/ usuarioPossuiToken = usuarioPossuiToken.rows;
-
-    if (usuarioPossuiToken.length !== 0) { 
-      return res.send({token: usuarioPossuiToken[0].token}) 
+    if (usuario.token !== null) {
+      return res.send({ token: usuario.token })
     }
-    if (usuarioPossuiToken.length === 0) { 
-      await db.query(`INSERT INTO sessions("userId", token) VALUES($1, $2);`,
-      [usuario.id, token]);
-      return res.send({token})
-      return(res.send("usuario n possui token"));
+    if (usuario.token === null) {
+      await db.query(`INSERT INTO sessions("userId", token) VALUES($1, $2);`,[usuario.id, token]);
+      return res.send({ token })
     }
-    res.send(usuarioPossuiToken);
+    res.send(usuario);
   } catch (err) {
     res.status(500).send(err.message);
   }
