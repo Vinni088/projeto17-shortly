@@ -11,10 +11,10 @@ export async function urlShorten(req, res) {
 
   try {
     let urlTabela = (await db.query(`
-    SELECT * FROM urls WHERE url = $1;`, 
-    [url])).rows;
+    SELECT * FROM urls WHERE url = $1;`,
+      [url])).rows;
 
-    if(urlTabela.length > 0){
+    if (urlTabela.length > 0) {
       let objeto = {
         id: urlTabela[0].id,
         shortUrl: urlTabela[0].shortUrl
@@ -27,11 +27,11 @@ export async function urlShorten(req, res) {
       ("userId", url, "shortUrl", "visitCount")
     VALUES 
       ($1, $2, $3, $4)
-    `,[session.id, url, shortUrl, 0]);
+    `, [session.id, url, shortUrl, 0]);
 
     let resposta = (await db.query(`
-    SELECT id, "shortUrl" FROM urls WHERE url = $1 ORDER BY id DESC;`, 
-    [url])).rows[0];
+    SELECT id, "shortUrl" FROM urls WHERE url = $1 ORDER BY id DESC;`,
+      [url])).rows[0];
 
     res.send(resposta);
   } catch (err) {
@@ -41,9 +41,13 @@ export async function urlShorten(req, res) {
 };
 
 export async function urlId(req, res) {
+  const { id } = req.params;
+
 
   try {
-    res.send("Resposta urlId");
+    let existeUrl = (await db.query(`SELECT id, "shortUrl", url FROM urls WHERE id = $1;`, [id])).rows;
+    if (existeUrl.length === 0) return res.status(404).send(" O Id que você está procurando não existe.")
+    res.send(existeUrl[0]);
   } catch (err) {
     res.status(500).send(err.message);
   }
@@ -51,9 +55,17 @@ export async function urlId(req, res) {
 };
 
 export async function urlOpen(req, res) {
+  const { shortUrl } = req.params;
 
   try {
-    res.send("Resposta urlOpen");
+
+    let urlExiste = (await db.query(`SELECT * FROM urls WHERE "shortUrl" = $1`, [shortUrl])).rows;
+    if (urlExiste.length === 0) return res.status(404).send("Essa shortUrl não existe no banco de dados");
+
+    let { id, visitCount } = urlExiste[0];
+    visitCount = visitCount + 1;
+    await db.query(`UPDATE urls SET "visitCount"=$1 WHERE id = $2;`, [visitCount, id]);
+    res.send(` hehehe `);
   } catch (err) {
     res.status(500).send(err.message);
   }
@@ -61,9 +73,18 @@ export async function urlOpen(req, res) {
 };
 
 export async function deleteUrlId(req, res) {
+  const { id } = req.params;
+  const { session } = res.locals;
 
   try {
-    res.send("Resposta deleteUrlId");
+    let urlExiste = (await db.query(`SELECT * FROM urls WHERE id = $1;`, [id])).rows;
+
+    if (urlExiste.length === 0) return res.status(404).send("Este id não pertence à nenhuma shortUrl.");
+    if (urlExiste[0].userId !== session.id) return res.status(401).send("Este shortUrl não pertence à este usuario.");
+
+    await db.query(`DELETE FROM urls WHERE id = $1;`,[id]);
+    
+    res.status(204).send("shortUrl apagada.");
   } catch (err) {
     res.status(500).send(err.message);
   }
