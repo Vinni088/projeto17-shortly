@@ -33,7 +33,7 @@ export async function urlShorten(req, res) {
     SELECT id, "shortUrl" FROM urls WHERE url = $1 ORDER BY id DESC;`,
       [url])).rows[0];
 
-    res.send(resposta);
+    res.status(201).send(resposta);
   } catch (err) {
     res.status(500).send(err.message);
   }

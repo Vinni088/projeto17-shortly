@@ -5,7 +5,7 @@
 -- Dumped from database version 12.15 (Ubuntu 12.15-0ubuntu0.20.04.1)
 -- Dumped by pg_dump version 12.15 (Ubuntu 12.15-0ubuntu0.20.04.1)
 
--- Started on 2023-08-07 00:50:06 -03
+-- Started on 2023-08-07 07:50:18 -03
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -30,7 +30,8 @@ SET default_table_access_method = heap;
 CREATE TABLE public.sessions (
     id integer NOT NULL,
     "userId" integer NOT NULL,
-    token text NOT NULL
+    token text NOT NULL,
+    "createdAt" timestamp without time zone DEFAULT NOW()
 );
 
 
@@ -67,7 +68,8 @@ CREATE TABLE public.urls (
     "userId" integer NOT NULL,
     url text NOT NULL,
     "shortUrl" text NOT NULL,
-    "visitCount" integer DEFAULT 0 NOT NULL
+    "visitCount" integer DEFAULT 0 NOT NULL,
+    "createdAt" timestamp without time zone DEFAULT NOW()
 );
 
 
@@ -103,7 +105,8 @@ CREATE TABLE public.users (
     id integer NOT NULL,
     name text NOT NULL,
     email text NOT NULL,
-    password text NOT NULL
+    password text NOT NULL,
+    "createdAt" timestamp without time zone DEFAULT NOW()
 );
 
 
@@ -226,7 +229,7 @@ ALTER TABLE ONLY public.urls
     ADD CONSTRAINT urls_fk0 FOREIGN KEY ("userId") REFERENCES public.users(id);
 
 
--- Completed on 2023-08-07 00:50:06 -03
+-- Completed on 2023-08-07 07:50:18 -03
 
 --
 -- PostgreSQL database dump complete

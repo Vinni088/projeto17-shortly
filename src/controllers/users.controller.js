@@ -11,7 +11,7 @@ export async function signUp(req, res) {
   const hash = bcrypt.hashSync(password, 10);
   try {
     let usuarioPreExistente = await db.query(`SELECT * FROM users WHERE email = $1`, [email]);
-    if (usuarioPreExistente.rows.length > 0) return res.status(422).send(" Esse email já está cadastrado ");
+    if (usuarioPreExistente.rows.length > 0) return res.status(409).send(" Esse email já está cadastrado ");
 
     let insert = await db.query(`
     INSERT INTO users 
