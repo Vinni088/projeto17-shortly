@@ -62,14 +62,20 @@ export async function urlOpen(req, res) {
   try {
     let urltentativa = await db.query(`SELECT * FROM urls WHERE "shortUrl" = $1`, [shortUrl]);
 
-    if (urltentativa === undefined) {return res.status(404).send(" Essa shortUrl não foi encontrada. ") }
-    if (urltentativa.length === 0) {return res.status(404).send(" Essa shortUrl não foi encontrada. ") }
-    
-    urlExiste = urltentativa.rows[0];
-    let { id, visitCount } = urlExiste;
-    visitCount = visitCount + 1;
-    await db.query(`UPDATE urls SET "visitCount"=$1 WHERE id = $2;`, [visitCount, id]);
-    return res.redirect(urlExiste.url)
+    if (urltentativa === undefined) {
+      return res.status(404).send(" Essa shortUrl não foi encontrada. ")
+    } else if (urltentativa.length === 0) {
+      return res.status(404).send(" Essa shortUrl não foi encontrada. ")
+    } else {
+      urlExiste = urltentativa.rows[0];
+      if (urlExiste === undefined) { return res.status(404).send(" Essa shortUrl não foi encontrada. ") }
+      let { id, visitCount } = urlExiste;
+      visitCount = visitCount + 1;
+      await db.query(`UPDATE urls SET "visitCount"=$1 WHERE id = $2;`, [visitCount, id]);
+      return res.redirect(urlExiste.url)
+    }
+
+
 
   } catch (err) {
     res.status(500).send(err.message);
@@ -87,8 +93,8 @@ export async function deleteUrlId(req, res) {
     if (urlExiste.length === 0) return res.status(404).send("Este id não pertence à nenhuma shortUrl.");
     if (urlExiste[0].userId !== session.id) return res.status(401).send("Este shortUrl não pertence à este usuario.");
 
-    await db.query(`DELETE FROM urls WHERE id = $1;`,[id]);
-    
+    await db.query(`DELETE FROM urls WHERE id = $1;`, [id]);
+
     res.status(204).send("shortUrl apagada.");
   } catch (err) {
     res.status(500).send(err.message);
