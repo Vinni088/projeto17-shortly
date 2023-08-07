@@ -48,7 +48,7 @@ export async function signIn(req, res) {
       return res.send({ token: usuario.token })
     }
     if (usuario.token === null) {
-      await db.query(`INSERT INTO sessions("userId", token) VALUES($1, $2);`,[usuario.id, token]);
+      await db.query(`INSERT INTO sessions("userId", token) VALUES($1, $2);`, [usuario.id, token]);
       return res.send({ token })
     }
     res.send(usuario);
@@ -58,16 +58,52 @@ export async function signIn(req, res) {
 }
 
 export async function usersMe(req, res) {
+
+  const { session } = res.locals;
+
   try {
-    res.send("Resposta usersMe");
+    const { rows } = await db.query(`
+    SELECT 
+      users.id, 
+      users.name, 
+      CAST(SUM(urls."visitCount") AS INTEGER) AS "visitCount",
+      JSON_AGG(JSON_BUILD_OBJECT(
+        'id', urls.id,
+        'shortUrl', urls."shortUrl",
+        'url', urls.url,
+        'visitCount', urls."visitCount"
+      ) ORDER BY urls.id) AS "shortnedUrls"
+    FROM users
+      JOIN urls 
+      ON urls."userId"= users.id
+    WHERE users.id = $1
+    GROUP BY users.id;
+    `,[session.id]);
+
+    res.send(rows[0]);
   } catch (err) {
     res.status(500).send(err.message);
   }
 }
 
 export async function ranking(req, res) {
+
   try {
-    res.send("Resposta ranking");
+    let ranking = await db.query(`
+    SELECT
+      users.id, 
+      users.name, 
+      CAST(COUNT(urls.url)        AS INTEGER) AS "linksCount",
+      CAST(SUM(urls."visitCount") AS INTEGER) AS "visitCount"
+    FROM users
+      LEFT JOIN urls 
+      ON urls."userId"= users.id
+    GROUP BY users.id
+    ORDER BY "visitCount" DESC
+    LIMIT 10;
+    `)
+
+    res.send(ranking.rows);
   } catch (err) {
     res.status(500).send(err.message);
   }

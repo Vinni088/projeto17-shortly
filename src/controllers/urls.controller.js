@@ -56,16 +56,20 @@ export async function urlId(req, res) {
 
 export async function urlOpen(req, res) {
   const { shortUrl } = req.params;
+  let urlExiste;
+  /*return res.send(shortUrl);*/
 
   try {
+    let urltentativa = await db.query(`SELECT * FROM urls WHERE "shortUrl" = $1`, [shortUrl]);
 
-    let urlExiste = (await db.query(`SELECT * FROM urls WHERE "shortUrl" = $1`, [shortUrl])).rows;
-    if (urlExiste.length === 0) return res.status(404).send("Essa shortUrl não existe no banco de dados");
-
-    let { id, visitCount } = urlExiste[0];
+    if (urltentativa === undefined) {return res.status(404).send(" Essa shortUrl não foi encontrada. ") }
+    
+    urlExiste = urltentativa.rows[0];
+    let { id, visitCount } = urlExiste;
     visitCount = visitCount + 1;
     await db.query(`UPDATE urls SET "visitCount"=$1 WHERE id = $2;`, [visitCount, id]);
-    res.send(` hehehe `);
+    return res.redirect(urlExiste.url)
+
   } catch (err) {
     res.status(500).send(err.message);
   }
