@@ -63,6 +63,7 @@ export async function urlOpen(req, res) {
     let urltentativa = await db.query(`SELECT * FROM urls WHERE "shortUrl" = $1`, [shortUrl]);
 
     if (urltentativa === undefined) {return res.status(404).send(" Essa shortUrl não foi encontrada. ") }
+    if (urltentativa.length === 0) {return res.status(404).send(" Essa shortUrl não foi encontrada. ") }
     
     urlExiste = urltentativa.rows[0];
     let { id, visitCount } = urlExiste;
